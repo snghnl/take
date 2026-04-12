@@ -15,9 +15,12 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "ai": "^6.0.158",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "lucide-react": "^1.8.0",
+    "nanoid": "^5.1.7",
     "radix-ui": "^1.4.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
