@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Eye, EyeOff } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   PromptInput,
@@ -26,13 +27,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { chat, PROVIDERS, type Message, type ProviderId } from "@/lib/ai";
+import ReactMarkdown from "react-markdown";
 
 type Tab = "chat" | "settings";
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
 
 interface PageCtx {
   content: string;
@@ -40,33 +38,43 @@ interface PageCtx {
   url: string;
 }
 
-const MODELS = [
-  { id: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku" },
-  { id: "claude-3-5-sonnet-20241022", label: "Claude 3.5 Sonnet" },
-  { id: "claude-opus-4-5", label: "Claude Opus 4.5" },
-];
+const DEFAULT_PROVIDER = PROVIDERS[0];
+const DEFAULT_MODEL = DEFAULT_PROVIDER.models[0].id;
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("chat");
-  const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState(MODELS[0].id);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [pageCtx, setPageCtx] = useState<PageCtx | null>(null);
   const [error, setError] = useState("");
-  const [settingsApiKey, setSettingsApiKey] = useState("");
-  const [settingsModel, setSettingsModel] = useState(MODELS[0].id);
+
+  // Active settings (used for chat)
+  const [providerId, setProviderId] = useState<ProviderId>(DEFAULT_PROVIDER.id);
+  const [modelId, setModelId] = useState(DEFAULT_MODEL);
+  const [apiKey, setApiKey] = useState("");
+
+  // Draft settings (edited in Settings tab, saved on Save)
+  const [draftProviderId, setDraftProviderId] = useState<ProviderId>(
+    DEFAULT_PROVIDER.id,
+  );
+  const [draftModelId, setDraftModelId] = useState(DEFAULT_MODEL);
+  const [draftApiKey, setDraftApiKey] = useState("");
+  const [showKey, setShowKey] = useState(false);
+
   useEffect(() => {
-    browser.storage.sync.get(["apiKey", "model"]).then((res) => {
-      if (res.apiKey) {
-        setApiKey(res.apiKey);
-        setSettingsApiKey(res.apiKey);
-      }
-      if (res.model) {
-        setModel(res.model);
-        setSettingsModel(res.model);
-      }
-    });
+    browser.storage.sync
+      .get(["apiKey", "providerId", "modelId"])
+      .then((res) => {
+        const pid = (res.providerId as ProviderId) ?? DEFAULT_PROVIDER.id;
+        const mid = (res.modelId as string) ?? DEFAULT_MODEL;
+        const key = (res.apiKey as string) ?? "";
+        setProviderId(pid);
+        setModelId(mid);
+        setApiKey(key);
+        setDraftProviderId(pid);
+        setDraftModelId(mid);
+        setDraftApiKey(key);
+      });
     fetchPageCtx();
   }, []);
 
@@ -95,35 +103,17 @@ export default function App() {
     setLoading(true);
 
     try {
-      const systemPrompt = pageCtx
+      const system = pageCtx
         ? `You are a helpful assistant. The user is viewing:\nTitle: ${pageCtx.title}\nURL: ${pageCtx.url}\n\nPage content:\n${pageCtx.content}`
         : "You are a helpful assistant.";
 
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 1024,
-          system: systemPrompt,
-          messages: newMessages,
-        }),
+      const reply = await chat({
+        providerId,
+        modelId,
+        apiKey,
+        messages: newMessages,
+        system,
       });
-
-      if (!res.ok) {
-        const err = await res
-          .json()
-          .catch(() => ({ error: { message: res.statusText } }));
-        throw new Error(err?.error?.message ?? res.statusText);
-      }
-
-      const data = await res.json();
-      const reply = data.content?.[0]?.text ?? "";
       setMessages([...newMessages, { role: "assistant", content: reply }]);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
@@ -133,11 +123,24 @@ export default function App() {
   }
 
   function handleSaveSettings() {
-    browser.storage.sync.set({ apiKey: settingsApiKey, model: settingsModel });
-    setApiKey(settingsApiKey);
-    setModel(settingsModel);
+    browser.storage.sync.set({
+      apiKey: draftApiKey,
+      providerId: draftProviderId,
+      modelId: draftModelId,
+    });
+    setApiKey(draftApiKey);
+    setProviderId(draftProviderId);
+    setModelId(draftModelId);
     setTab("chat");
   }
+
+  function handleDraftProviderChange(pid: ProviderId) {
+    const provider = PROVIDERS.find((p) => p.id === pid)!;
+    setDraftProviderId(pid);
+    setDraftModelId(provider.models[0].id);
+  }
+
+  const draftProvider = PROVIDERS.find((p) => p.id === draftProviderId)!;
 
   return (
     <Tabs
@@ -179,29 +182,62 @@ export default function App() {
       <TabsContent value="settings" className="overflow-auto">
         <div className="flex flex-col gap-4 p-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="api-key">Anthropic API Key</Label>
-            <Input
-              id="api-key"
-              type="password"
-              value={settingsApiKey}
-              onChange={(e) => setSettingsApiKey(e.target.value)}
-              placeholder="sk-ant-..."
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="model-select">Model</Label>
-            <Select value={settingsModel} onValueChange={setSettingsModel}>
-              <SelectTrigger id="model-select" className="w-full">
+            <Label>Provider</Label>
+            <Select
+              value={draftProviderId}
+              onValueChange={handleDraftProviderChange}
+            >
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {MODELS.map((m) => (
+                {PROVIDERS.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>Model</Label>
+            <Select value={draftModelId} onValueChange={setDraftModelId}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {draftProvider.models.map((m) => (
                   <SelectItem key={m.id} value={m.id}>
                     {m.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>API Key</Label>
+            <div className="relative">
+              <Input
+                type={showKey ? "text" : "password"}
+                value={draftApiKey}
+                onChange={(e) => setDraftApiKey(e.target.value)}
+                placeholder={draftProvider.keyPlaceholder}
+                className="pr-9"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="absolute right-1 top-1/2 text-muted-foreground"
+                onClick={() => setShowKey((v) => !v)}
+              >
+                {showKey ? (
+                  <EyeOff className="size-4" />
+                ) : (
+                  <Eye className="size-4" />
+                )}
+              </Button>
+            </div>
           </div>
           <Button onClick={handleSaveSettings}>Save</Button>
         </div>
@@ -241,7 +277,7 @@ export default function App() {
                           : "bg-card border border-border text-foreground rounded-bl-sm"
                       }`}
                     >
-                      {msg.content}
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
                     </div>
                   </div>
                 ))}
@@ -274,7 +310,7 @@ export default function App() {
         {/* Input */}
         <PromptInput
           onSubmit={handleSend}
-          className="border-t border-border shrink-0 rounded-none pb-2"
+          className="border-t border-border shrink-0 rounded-none pb-2 px-2"
         >
           <PromptInputBody>
             <PromptInputTextarea placeholder="Ask about this page…" />
