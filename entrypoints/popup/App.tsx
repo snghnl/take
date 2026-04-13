@@ -20,7 +20,7 @@ function App() {
 
   async function loadArchives() {
     const res = await browser.runtime.sendMessage({ type: 'GET_ARCHIVES' });
-    setArchives((res.archives ?? []).slice(0, 8));
+    setArchives((res?.archives ?? []).slice(0, 8));
   }
 
   async function handleArchive() {
