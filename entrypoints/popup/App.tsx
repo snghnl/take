@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import type { ArchiveItem } from '../../types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import './App.css';
 
 function formatDate(iso: string) {
@@ -90,34 +92,38 @@ function App() {
         {archives.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-5">No archives yet</p>
         ) : (
-          <ul className="flex flex-col gap-1">
-            {archives.map((item) => (
-              <li
-                key={item.id}
-                className="flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-border bg-muted/50 hover:bg-muted transition-colors"
-              >
-                <a
-                  href={item.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1 min-w-0 truncate text-xs text-foreground no-underline hover:text-primary hover:underline"
-                  title={item.title}
+          <ScrollArea className="max-h-[280px]">
+            <div className="flex flex-col gap-1.5">
+              {archives.map((item) => (
+                <Card
+                  key={item.id}
+                  className="flex flex-row items-center gap-0 px-2.5 py-2 rounded-lg"
                 >
-                  {item.title || item.url}
-                </a>
-                <span className="text-[11px] text-muted-foreground shrink-0">{formatDate(item.date)}</span>
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={() => handleDelete(item.id)}
-                  title="Delete"
-                  className="text-muted-foreground hover:text-destructive shrink-0"
-                >
-                  ✕
-                </Button>
-              </li>
-            ))}
-          </ul>
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 min-w-0 truncate text-xs text-foreground no-underline hover:text-primary hover:underline"
+                    title={item.title}
+                  >
+                    {item.title || item.url}
+                  </a>
+                  <span className="text-[11px] text-muted-foreground shrink-0 ml-1.5">
+                    {formatDate(item.date)}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={() => handleDelete(item.id)}
+                    title="Delete"
+                    className="text-muted-foreground hover:text-destructive shrink-0 ml-0.5"
+                  >
+                    ✕
+                  </Button>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
         )}
       </div>
     </div>
