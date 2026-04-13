@@ -53,7 +53,8 @@ function App() {
   }
 
   async function handleChat() {
-    await browser.runtime.sendMessage({ type: 'OPEN_SIDEPANEL' });
+    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id) await chrome.sidePanel.open({ tabId: tab.id });
     window.close();
   }
 
