@@ -1,14 +1,13 @@
-import { useState, useEffect } from 'react';
-import type { ArchiveItem } from '../../types';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import './App.css';
+import { useState, useEffect } from "react";
+import type { ArchiveItem } from "../../types";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import "./App.css";
 
 function formatDate(iso: string) {
   const d = new Date(iso);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function App() {
@@ -21,21 +20,24 @@ function App() {
   }, []);
 
   async function loadArchives() {
-    const res = await browser.runtime.sendMessage({ type: 'GET_ARCHIVES' });
+    const res = await browser.runtime.sendMessage({ type: "GET_ARCHIVES" });
     setArchives((res?.archives ?? []).slice(0, 8));
   }
 
   async function handleArchive() {
     setArchiving(true);
     try {
-      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      const [tab] = await browser.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
       if (!tab?.id) return;
       const [result] = await browser.scripting.executeScript({
         target: { tabId: tab.id },
         func: () => ({
           url: location.href,
           title: document.title,
-          textContent: document.body?.innerText?.slice(0, 50000) ?? '',
+          textContent: document.body?.innerText?.slice(0, 50000) ?? "",
         }),
       });
       const item: ArchiveItem = {
@@ -45,7 +47,7 @@ function App() {
         textContent: result.result.textContent,
         date: new Date().toISOString(),
       };
-      await browser.runtime.sendMessage({ type: 'ARCHIVE_PAGE', item });
+      await browser.runtime.sendMessage({ type: "ARCHIVE_PAGE", item });
       setArchived(true);
       setTimeout(() => setArchived(false), 1500);
       await loadArchives();
@@ -55,13 +57,16 @@ function App() {
   }
 
   async function handleChat() {
-    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await browser.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
     if (tab?.id) await chrome.sidePanel.open({ tabId: tab.id });
     window.close();
   }
 
   async function handleDelete(id: string) {
-    await browser.runtime.sendMessage({ type: 'DELETE_ARCHIVE', id });
+    await browser.runtime.sendMessage({ type: "DELETE_ARCHIVE", id });
     await loadArchives();
   }
 
@@ -72,7 +77,7 @@ function App() {
         <span className="flex-1 font-bold text-[15px]">Take</span>
         <div className="flex gap-1.5">
           <Button size="sm" onClick={handleArchive} disabled={archiving}>
-            {archived ? '✓ Archived' : '📥 Archive page'}
+            {archived ? "✓ Archived" : "📥 Archive page"}
           </Button>
           <Button size="sm" variant="outline" onClick={handleChat}>
             💬 Chat
@@ -90,10 +95,12 @@ function App() {
         </div>
 
         {archives.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-5">No archives yet</p>
+          <p className="text-xs text-muted-foreground text-center py-5">
+            No archives yet
+          </p>
         ) : (
-          <ScrollArea className="max-h-[280px]">
-            <div className="flex flex-col gap-1.5">
+          <div className="max-h-70 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
+            <div className="flex flex-col gap-1.5 w-full">
               {archives.map((item) => (
                 <Card
                   key={item.id}
@@ -123,7 +130,7 @@ function App() {
                 </Card>
               ))}
             </div>
-          </ScrollArea>
+          </div>
         )}
       </div>
     </div>
