@@ -76,6 +76,21 @@ export default function App() {
         setDraftApiKey(key);
       });
     fetchPageCtx();
+
+    const onActivated = () => fetchPageCtx();
+    const onUpdated = (
+      _tabId: number,
+      changeInfo: chrome.tabs.TabChangeInfo,
+    ) => {
+      if (changeInfo.status === "complete") fetchPageCtx();
+    };
+
+    chrome.tabs.onActivated.addListener(onActivated);
+    chrome.tabs.onUpdated.addListener(onUpdated);
+    return () => {
+      chrome.tabs.onActivated.removeListener(onActivated);
+      chrome.tabs.onUpdated.removeListener(onUpdated);
+    };
   }, []);
 
   async function fetchPageCtx() {
