@@ -3,6 +3,7 @@ import type { ArchiveItem } from "../../types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { SquareArrowOutUpRight } from "lucide-react";
 import "./App.css";
 
 function formatDate(iso: string) {
@@ -70,6 +71,10 @@ function App() {
     await loadArchives();
   }
 
+  async function handleOpenTab() {
+    // TODO: make
+  }
+
   return (
     <div className="w-[340px] font-sans bg-background text-foreground">
       {/* Header */}
@@ -91,7 +96,13 @@ function App() {
           <span className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
             Archives
           </span>
-          <Badge variant="secondary">{archives.length}</Badge>
+          <div className="flex flex-row items-center gap-1.5">
+            <Badge variant="secondary">{archives.length}</Badge>
+            <SquareArrowOutUpRight
+              className="size-3 text-muted-foreground"
+              onClick={handleOpenTab}
+            />
+          </div>
         </div>
 
         {archives.length === 0 ? (
@@ -100,7 +111,7 @@ function App() {
           </p>
         ) : (
           <div className="max-h-70 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
-            <div className="flex flex-col gap-1.5 w-full">
+            <div className="flex flex-col gap-1.5 w-full px-px py-1">
               {archives.map((item) => (
                 <Card
                   key={item.id}
