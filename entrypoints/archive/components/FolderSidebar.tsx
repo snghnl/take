@@ -34,6 +34,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { flattenFolders } from "../lib";
+import TakeLogo from "@/assets/icon.png";
 
 interface FolderSidebarProps {
   folders: Folder[];
@@ -60,7 +61,8 @@ export function FolderSidebar({
 
   return (
     <Sidebar collapsible="offcanvas">
-      <SidebarHeader className="border-b border-border px-4 py-4 font-bold text-base">
+      <SidebarHeader className="flex flex-row items-center border-b border-border px-4 py-4 font-bold text-base">
+        <img src={TakeLogo} alt="Take" className="size-5" />
         Take
       </SidebarHeader>
 
