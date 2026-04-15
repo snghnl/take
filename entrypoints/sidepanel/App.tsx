@@ -243,7 +243,7 @@ export default function App() {
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                className="absolute right-1 top-1/2 text-muted-foreground"
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground"
                 onClick={() => setShowKey((v) => !v)}
               >
                 {showKey ? (
