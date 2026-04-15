@@ -74,10 +74,18 @@ export default defineBackground(() => {
     if (message.type === "CREATE_FOLDER") {
       browser.storage.local.get("folders").then((result) => {
         const folders: Folder[] = result.folders ?? [];
+        const parentId = message.parentId ?? null;
+        const duplicate = folders.some(
+          (f) => f.parentId === parentId && f.name === message.name,
+        );
+        if (duplicate) {
+          sendResponse({ ok: false, error: "A folder with that name already exists here." });
+          return;
+        }
         const newFolder: Folder = {
           id: String(Date.now()),
           name: message.name,
-          parentId: message.parentId ?? null,
+          parentId,
         };
         folders.push(newFolder);
         browser.storage.local
@@ -90,6 +98,18 @@ export default defineBackground(() => {
     if (message.type === "RENAME_FOLDER") {
       browser.storage.local.get("folders").then((result) => {
         const folders: Folder[] = result.folders ?? [];
+        const target = folders.find((f) => f.id === message.id);
+        if (!target) {
+          sendResponse({ ok: false, error: "Folder not found." });
+          return;
+        }
+        const duplicate = folders.some(
+          (f) => f.id !== message.id && f.parentId === target.parentId && f.name === message.name,
+        );
+        if (duplicate) {
+          sendResponse({ ok: false, error: "A folder with that name already exists here." });
+          return;
+        }
         const updated = folders.map((f) =>
           f.id === message.id ? { ...f, name: message.name } : f,
         );

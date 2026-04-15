@@ -72,7 +72,8 @@ function App() {
   }
 
   async function handleOpenTab() {
-    // TODO: make
+    await browser.tabs.create({ url: browser.runtime.getURL("archive.html") });
+    window.close();
   }
 
   return (
