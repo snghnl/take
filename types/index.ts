@@ -17,5 +17,6 @@ export interface ArchiveItem {
   title: string;
   textContent: string;
   date: string;
+  favicon?: string;
   folderId?: string | null;
 }

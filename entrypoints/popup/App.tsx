@@ -41,12 +41,16 @@ function App() {
           textContent: document.body?.innerText?.slice(0, 50000) ?? "",
         }),
       });
+
+      if (!result.result) return;
+
       const item: ArchiveItem = {
         id: String(Date.now()),
         url: result.result.url,
         title: result.result.title,
         textContent: result.result.textContent,
         date: new Date().toISOString(),
+        favicon: tab.favIconUrl,
       };
       await browser.runtime.sendMessage({ type: "ARCHIVE_PAGE", item });
       setArchived(true);

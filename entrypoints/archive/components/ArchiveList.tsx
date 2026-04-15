@@ -106,6 +106,9 @@ export function ArchiveList({
                 key={item.id}
                 className="group flex items-center gap-3 px-3 py-2.5 rounded-lg border border-border hover:bg-accent/40 transition-colors"
               >
+                {item.favicon && (
+                  <img src={item.favicon} alt="favicon" className="size-4" />
+                )}
                 <div className="flex-1 min-w-0">
                   <a
                     href={item.url}
@@ -154,7 +157,9 @@ export function ArchiveList({
                         <DropdownMenuItem
                           key={folder.id}
                           onClick={() => onMoveArchive(item.id, folder.id)}
-                          className={item.folderId === folder.id ? "font-medium" : ""}
+                          className={
+                            item.folderId === folder.id ? "font-medium" : ""
+                          }
                           style={{ paddingLeft: `${8 + depth * 12}px` }}
                         >
                           {folder.name}
